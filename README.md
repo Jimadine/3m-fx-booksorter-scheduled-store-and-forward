@@ -19,7 +19,7 @@
 
  To test the script from the command line:
  ```
- cscript.exe //nologo 3MStoreAndForward.vbs /inductionpcname:inductionpc.york.ac.uk /testmode:true /forwardsleeptime:5
+ cscript.exe //nologo 3MStoreAndForward.vbs /inductionpcname:inductionpc.domain.ac.uk /testmode:true /forwardsleeptime:5
  ```
 
  `/testmode:true` runs through the operation mode changes and store-forward procedure irrespective of whether there are any items to process.
@@ -31,11 +31,16 @@ The script provides a fair amount of output as it runs. This is designed to be l
 To create a scheduled task, do so in the normal way:
 
  ```
- Program:   cmd.exe
- Arguments: cscript.exe //nologo 3MStoreAndForward.vbs >>3MStoreAndForward.log & cmd.exe /C echo --->>3MStoreAndForward.log
- Start in:  the folder where this script is
+ Program/script:   cmd.exe
+ Add arguments: cscript.exe //nologo 3MStoreAndForward.vbs >>3MStoreAndForward.log 2>&1 & cmd.exe /C echo --->>3MStoreAndForward.log
+ Start in:  the folder where the script is
  ```
   The `cmd.exe /C echo ---` creates some separation in the log file, helpful in delineating each scheduled task run. A scheduled task `3MStoreAndForward.xml` export file is provided. To simplify creating a scheduled task you can import this file into Task Scheduler.
+
+### Limitations & Improvements
+
+- The script makes no attempt to record the item IDs of the transactions that are stored or were forwarded. Though it is possible to scrape these from the relevant admin web page, it's felt that there's little value in doing so.
+- It's probably possible to avoid the script's "sleep" period — that comes after the forwarding operation is started — by understanding better how the final `StoreAndForwardStart.aspx` HTTP response (the one that indicates it's finished) can be distinguished from intermediate responses. However, testing this script in a live environment was difficult, and relied upon there being some genuine transactions to forward (which is seldom the case).
 
 ### For interest...
  A less sophisticated `.cmd` implementation is also available, requiring `curl` for Windows. See the REMarks in `3mStoreAndForward.cmd` for more information.
