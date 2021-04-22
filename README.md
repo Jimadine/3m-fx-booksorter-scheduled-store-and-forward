@@ -41,6 +41,7 @@ To create a scheduled task, do so in the normal way:
 
 - The script makes no attempt to record the item IDs of the transactions that are stored or were forwarded. Though it is possible to scrape these from the relevant admin web page, it's felt that there's little value in doing so.
 - It's probably possible to avoid the script's "sleep" period — that comes after the forwarding operation is started — by understanding better how the final `StoreAndForwardStart.aspx` HTTP response (the one that indicates it's finished) can be distinguished from intermediate responses. However, testing this script in a live environment was difficult, and relied upon there being some genuine transactions to forward (which is seldom the case).
+- The script requires that the `IntelligentReturnSystemManagerPassword` be set as a plaintext user environment variable. This may be considered a security issue for some. In our case, though, we perceive it as a low risk.
 
 ### For interest...
  A less sophisticated `.cmd` implementation is also available, requiring `curl` for Windows. See the REMarks in `3mStoreAndForward.cmd` for more information.
