@@ -6,6 +6,10 @@ REM Download and add binpath to the System PATH ennvironment variable
 REM Set the IntelligentReturnSystemManagerPassword in the environment with:
 REM setx IntelligentReturnSystemManagerPassword password
 REM Note: for Task Scheduler to "see" the new environment variable, you probably need to terminate Taskeng.exe (the one running as the user rather than SYSTEM). Or reboot the system.
+REM In the scheduled task, add the following:
+REM Program/script: 3mStoreAndForward.cmd
+REM Add arguments: >> 3mStoreAndForward.log 2>&1
+REM Start in: the folder where this script is
 
 REM The following allows you to specify an alternative hostname as the first argument
 IF NOT [%1]==[] ( SET "INDUCTION_PC_NAME=%1" ) ELSE ( SET "INDUCTION_PC_NAME=localhost" )
@@ -13,7 +17,7 @@ SET _DATESTRING=%DATE:~0,2%/%DATE:~3,2%/%DATE:~6,4%
 SET _TIMESTRING=%TIME:~0,2%:%TIME:~3,2%
 SET _TIMESTRING=%_TIMESTRING: =0%
 
-IF NOT DEFINED IntelligentReturnSystemManagerPassword ECHO %_DATESTRING% %_TIMESTRING%: IntelligentReturnSystemManagerPassword environmental variable not defined >> 3mStoreAndForward.log && EXIT /B 1
+IF NOT DEFINED IntelligentReturnSystemManagerPassword ECHO %_DATESTRING% %_TIMESTRING%: IntelligentReturnSystemManagerPassword environmental variable not defined && EXIT /B 1
 
 REM Authenticate the user
 curl -s -o NUL --cookie-jar booksorterjar.txt --data "password=%IntelligentReturnSystemManagerPassword%" "http://%INDUCTION_PC_NAME%/IntelligentReturn/pages/Index.aspx"
@@ -22,7 +26,7 @@ REM Assign number of items to process to variable
 FOR /f "tokens=3 delims=><" %%G IN ('curl -L -s --cookie booksorterjar.txt --cookie-jar booksorterjar.txt "http://%INDUCTION_PC_NAME%/IntelligentReturn/pages/StoreAndForward.aspx" ^| find "Store & Forward Items"') DO SET "numOfItemsToProcess=%%G"
 
 REM Record number of items for later checking
-ECHO %_DATESTRING% %_TIMESTRING%: %numOfItemsToProcess% items to process >> 3mStoreAndForward.log
+ECHO %_DATESTRING% %_TIMESTRING%: %numOfItemsToProcess% items to process
 
 REM If number of items to process is zero, exit early
 IF [%numOfItemsToProcess%]==[0] GOTO CLEANUP
