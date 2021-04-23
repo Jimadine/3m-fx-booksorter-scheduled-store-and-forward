@@ -44,4 +44,4 @@ To create a scheduled task, do so in the normal way:
 - The script requires that the `IntelligentReturnSystemManagerPassword` be set as a plaintext user environment variable. This may be considered a security issue for some. In our case, though, we perceive it as a low risk.
 
 ### For interest...
- A less sophisticated `.cmd` implementation is also available, requiring `curl` for Windows. See the REMarks in `3mStoreAndForward.cmd` for more information.
+A very basic `.cmd` implementation is also provided in this repo. It requires `curl` for Windows. See the REMarks in `3mStoreAndForward.cmd` for more information. This was put together as a rapid prototype, before the VBScript solution was developed, in order to understand the flow and build confidence that a solution of this nature would work.
