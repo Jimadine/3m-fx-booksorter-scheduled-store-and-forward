@@ -23,10 +23,8 @@ Else
 End If
 
 minNumItemsToProcess = 0
-If colargs.Exists("testmode") Then
-  If colArgs.Item("testmode") = "true" Then
+If colargs.Exists("testmode") And colArgs.Item("testmode") = "true" Then
     minNumItemsToProcess = 1
-  End If
 End If
 
 ' Check the environment variable is set
