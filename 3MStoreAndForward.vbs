@@ -4,48 +4,48 @@
 ' Author:     Jim Adamson
 ' Code formatted with http://www.vbindent.com
 Option Explicit
-Dim baseUrl,colArgs,currentMode,forwardSleepTime,inductionPcName,intelligentReturnSystemManagerPassword,mode,numItemsToProcess,objHTTP,objShell,strCookie,strResponse,testMode,when
-Set colArgs = WScript.Arguments.Named
+Dim blnTestMode,colNamedArguments,intNumItemsToProcess,objHTTP,objShell,strBaseUrl,strCookie,strCurrentMode,strForwardSleepTime,strInductionPcName,strIntelligentReturnSystemManagerPassword,strMode,strResponse,strWhen
+Set colNamedArguments = WScript.Arguments.Named
 Set objShell = WScript.CreateObject("WScript.Shell")
 
 ' Check the web admin interface password is set as a user environment variable
 If Not objShell.Environment("USER").Item("IntelligentReturnSystemManagerPassword") = "" Then
-  intelligentReturnSystemManagerPassword = objShell.Environment("USER").Item("IntelligentReturnSystemManagerPassword")
+  strIntelligentReturnSystemManagerPassword = objShell.Environment("USER").Item("IntelligentReturnSystemManagerPassword")
 Else
   WScript.Echo "The password must be set as a user environment variable with name IntelligentReturnSystemManagerPassword"
   WScript.Quit 1
 End If
 
 ' Check whether a "/inductionpcname:string" has been supplied. If not, default to localhost
-If IsEmpty(colArgs.Item("inductionpcname")) Then
-  inductionPcName = "localhost"
+If IsEmpty(colNamedArguments.Item("inductionpcname")) Then
+  strInductionPcName = "localhost"
 Else
-  inductionPcName = colArgs.Item("inductionpcname")
+  strInductionPcName = colNamedArguments.Item("inductionpcname")
 End If
 
 ' Check whether "/forwardsleeptime:seconds" has been supplied. If not, default to 2 minutes
-If IsEmpty(colArgs.Item("forwardsleeptime")) Then
-  forwardSleepTime = 120000
+If IsEmpty(colNamedArguments.Item("forwardsleeptime")) Then
+  strForwardSleepTime = 120000
 Else
-  forwardSleepTime = colArgs.Item("forwardsleeptime")*1000
+  strForwardSleepTime = colNamedArguments.Item("forwardsleeptime")*1000
 End If
 
 ' Check whether "/testmode" has been supplied. If so, this forces the mode changes & forwarding process to happen
-If colargs.Exists("testmode") Then
-    testMode = true
+If colNamedArguments.Exists("testmode") Then
+    blnTestMode = true
 Else
-    testMode = false
+    blnTestMode = false
 End If
 
-baseUrl = "http://" & inductionPcName
+strBaseUrl = "http://" & strInductionPcName
 
 ' Authenticate
 Set objHTTP = CreateObject("WinHttp.WinHttpRequest.5.1")
-objHTTP.open "POST", baseUrl & "/IntelligentReturn/pages/Index.aspx", False
+objHTTP.open "POST", strBaseUrl & "/IntelligentReturn/pages/Index.aspx", False
 ' Don't follow redirects
 objHTTP.Option(6) = False
 objHTTP.SetRequestHeader "Content-Type", "application/x-www-form-urlencoded"
-objHTTP.send "password=" & intelligentReturnSystemManagerPassword
+objHTTP.send "password=" & strIntelligentReturnSystemManagerPassword
 strCookie = objHTTP.getResponseHeader("Set-Cookie")
 If Left(strCookie, 17) = "ASP.NET_SessionId" Then
   Wscript.Echo Now() & ": " & "Authenticating using session cookie"
@@ -56,26 +56,26 @@ End If
 Set objHTTP = nothing
 
 ' Check number of items BEFORE forwarding
-numItemsToProcess = countItems("Before")
+intNumItemsToProcess = countItems("Before")
 
-If numItemsToProcess >= 1 Or testMode = true Then
+If intNumItemsToProcess >= 1 Or blnTestMode = true Then
   ' Set the Operation Mode to OUT OF SERVICE, while the store/forwarding process is done
-    currentMode = changeMode("OUT_OF_SERVICE")
-    If currentMode = "OUT_OF_SERVICE" Then
+    strCurrentMode = changeMode("OUT_OF_SERVICE")
+    If strCurrentMode = "OUT_OF_SERVICE" Then
   ' Forward items
       wscript.echo Now() & ": Proceeding with Store/Forward"
       Set objHTTP = CreateObject("WinHttp.WinHttpRequest.5.1")
-      objHTTP.open "GET", baseUrl & "/IntelligentReturn/pages/StoreAndForwardStart.aspx", False
+      objHTTP.open "GET", strBaseUrl & "/IntelligentReturn/pages/StoreAndForwardStart.aspx", False
       objHTTP.SetRequestHeader "Cookie", strCookie
       objHTTP.send
       Set objHTTP = nothing
   ' Allow time for the items to be processed
-      WScript.Sleep forwardSleepTime
+      WScript.Sleep strForwardSleepTime
   ' Check number of items AFTER forwarding
-      numItemsToProcess = countItems("After")
+      intNumItemsToProcess = countItems("After")
   ' Set mode back to normal
-      currentMode = changeMode("NORMAL")
-      If currentMode = "NORMAL" Then
+      strCurrentMode = changeMode("NORMAL")
+      If strCurrentMode = "NORMAL" Then
         wscript.echo Now() & ": Script finished normally - exiting"
       Else
         wscript.echo Now() & ": Problem with mode setting mode to NORMAL - exiting"
@@ -90,53 +90,53 @@ Else
   WScript.Quit
 End If
 
-Function countItems(when)
+Function countItems(strWhen)
 ' Check number of items for processing
-  Dim numItemsToProcessElement,numItemsToProcessInnertext,objHtmlFile
+  Dim objNumItemsToProcessElement,strNumItemsToProcessElementInnertext,objHtmlFile
   Set objHTTP = CreateObject("WinHttp.WinHttpRequest.5.1")
   Set objHtmlFile = CreateObject("htmlfile")
-  objHTTP.open "GET", baseUrl & "/IntelligentReturn/pages/StoreAndForward.aspx", False
+  objHTTP.open "GET", strBaseUrl & "/IntelligentReturn/pages/StoreAndForward.aspx", False
   objHTTP.SetRequestHeader "Cookie", strCookie
   objHTTP.send
   If objHTTP.Status = 200 Then
     objHtmlFile.Write objHTTP.ResponseText
     objHtmlFile.Close
-    Set numItemsToProcessElement = objHtmlFile.getElementById("ctl00_MainContentPlaceHolder_lblItemCount")
-    numItemsToProcessInnertext = numItemsToProcessElement.Innertext
-    countItems = CInt(numItemsToProcessInnertext)
-    wscript.echo Now() & ": (" & when & ") " & numItemsToProcessInnertext & " item(s) to process"
-    numItemsToProcessInnertext=empty
+    Set objNumItemsToProcessElement = objHtmlFile.getElementById("ctl00_MainContentPlaceHolder_lblItemCount")
+    strNumItemsToProcessElementInnertext = objNumItemsToProcessElement.Innertext
+    countItems = CInt(strNumItemsToProcessElementInnertext)
+    wscript.echo Now() & ": (" & strWhen & ") " & strNumItemsToProcessElementInnertext & " item(s) to process"
+    strNumItemsToProcessElementInnertext=empty
   End If
   Set objHTTP = nothing
   Set objHtmlFile = nothing
 End Function
 
-Function changeMode(mode)
+Function changeMode(strMode)
   'Change the mode of operation
-  Dim modeElement,objHtmlFile,selectedValue,redirectLocation
+  Dim objModeElement,objHtmlFile,strModeElementSelectedValue,strRedirectLocation
   Set objHTTP = CreateObject("WinHttp.WinHttpRequest.5.1")
   Set objHtmlFile = CreateObject("htmlfile")
-  objHTTP.open "POST", baseUrl & "/IntelligentReturn/pages/Support.aspx", False
+  objHTTP.open "POST", strBaseUrl & "/IntelligentReturn/pages/Support.aspx", False
   objHTTP.SetRequestHeader "Cookie", strCookie
   objHTTP.SetRequestHeader "Content-Type", "application/x-www-form-urlencoded"
-  objHTTP.send "mode=" & mode & "&submit=Set+Mode"
-  wscript.echo Now() & ": Attempting to set operation mode to " & mode
+  objHTTP.send "mode=" & strMode & "&submit=Set+Mode"
+  wscript.echo Now() & ": Attempting to set operation mode to " & strMode
 ' Vista WinHttp doesn't seem to follow 302 redirects, so handle the redirect manually
   If objHTTP.Status = 302 Then
-    redirectLocation = objHTTP.getResponseHeader("Location")
+    strRedirectLocation = objHTTP.getResponseHeader("Location")
     Set objHTTP = nothing
     Set objHTTP = CreateObject("WinHttp.WinHttpRequest.5.1")
-    objHTTP.open "GET", baseUrl & redirectLocation, False
+    objHTTP.open "GET", strBaseUrl & strRedirectLocation, False
     objHTTP.SetRequestHeader "Cookie", strCookie
     objHTTP.send
   End If
   If objHTTP.Status = 200 Then
     objHtmlFile.Write objHTTP.ResponseText
     objHtmlFile.Close
-    Set modeElement = objHtmlFile.getElementById("mode")
-    selectedValue = modeElement.options(modeElement.selectedIndex).Value
-    wscript.echo Now() & ": Operation mode currently set to " & selectedValue
-    changeMode = selectedValue
+    Set objModeElement = objHtmlFile.getElementById("mode")
+    strModeElementSelectedValue = objModeElement.options(objModeElement.selectedIndex).Value
+    wscript.echo Now() & ": Operation mode currently set to " & strModeElementSelectedValue
+    changeMode = strModeElementSelectedValue
     Set objHTTP = nothing
     Set objHtmlFile = nothing
   Else
