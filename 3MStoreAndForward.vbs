@@ -75,8 +75,14 @@ If numItemsToProcess >= 1 Or testMode = true Then
       numItemsToProcess = countItems("After")
   ' Set mode back to normal
       currentMode = changeMode("NORMAL")
+      If currentMode = "NORMAL" Then
+        wscript.echo Now() & ": Script finished normally - exiting"
+      Else
+        wscript.echo Now() & ": Problem with mode setting mode to NORMAL - exiting"
+        Wscript.quit 1
+      End If
     Else
-      wscript.echo Now() & ": Problem with mode set - exiting"
+      wscript.echo Now() & ": Problem with mode setting mode to OUT_OF_SERVICE - exiting"
       Wscript.quit 1
     End If
 Else
