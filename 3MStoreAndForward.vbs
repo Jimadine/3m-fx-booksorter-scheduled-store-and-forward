@@ -27,7 +27,7 @@ End If
 If colargs.Exists("forwardsleeptime") And Not(IsEmpty(colArgs.Item("forwardsleeptime"))) Then
   forwardSleepTime = colArgs.Item("forwardsleeptime")*1000
 Else
-  forwardSleepTime = 12000
+  forwardSleepTime = 120000
 End If
 
 ' Check whether "/testmode" has been supplied. If so, this forces the mode changes & forwarding process to happen
