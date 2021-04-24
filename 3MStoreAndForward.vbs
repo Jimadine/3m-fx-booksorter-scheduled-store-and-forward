@@ -1,38 +1,40 @@
 ' Created:    21/04/2021
-' Modified:   21/04/2021
-' Version:    1.0
+' Modified:   24/04/2021
+' Version:    1.1
 ' Author:     Jim Adamson
 ' Code formatted with http://www.vbindent.com
 Option Explicit
-Dim forwardSleepTime,inductionPcName,IntelligentReturnSystemManagerPassword,baseUrl,strCookie,strResponse,colArgs,objHTTP,objShell,objHtmlFile,numItemsToProcess,numItemsToProcessInnertext,currentMode,minNumItemsToProcess,modeElement,mode,selectedValue,numItemsToProcessElement,redirectLocation,when
+Dim baseUrl,colArgs,currentMode,forwardSleepTime,inductionPcName,intelligentReturnSystemManagerPassword,mode,numItemsToProcess,objHTTP,objShell,strCookie,strResponse,testMode,when
 Set colArgs = WScript.Arguments.Named
 Set objShell = WScript.CreateObject("WScript.Shell")
 
-' Check whether a named argument has been supplied. If not default to localhost
-If colargs.Exists("inductionpcname") Then
+' Check the web admin interface password is set as a user environment variable
+If Not objShell.Environment("USER").Item("IntelligentReturnSystemManagerPassword") = "" Then
+  intelligentReturnSystemManagerPassword = objShell.Environment("USER").Item("IntelligentReturnSystemManagerPassword")
+Else
+  WScript.Echo "The password must be set as a user environment variable with name IntelligentReturnSystemManagerPassword"
+  WScript.Quit 1
+End If
+
+' Check whether a "/inductionpcname:string" has been supplied. If not, default to localhost
+If colargs.Exists("inductionpcname") And Not(IsEmpty(colArgs.Item("inductionpcname"))) Then
   inductionPcName = colArgs.Item("inductionpcname")
 Else
   inductionPcName = "localhost"
 End If
 
-If colargs.Exists("forwardsleeptime") Then
+' Check whether "/forwardsleeptime:seconds" has been supplied. If not, default to 2 minutes
+If colargs.Exists("forwardsleeptime") And Not(IsEmpty(colArgs.Item("forwardsleeptime"))) Then
   forwardSleepTime = colArgs.Item("forwardsleeptime")*1000
 Else
-' 2 minutes
   forwardSleepTime = 12000
 End If
 
-minNumItemsToProcess = 0
-If colargs.Exists("testmode") And colArgs.Item("testmode") = "true" Then
-    minNumItemsToProcess = 1
-End If
-
-' Check the environment variable is set
-If Not objShell.Environment("USER").Item("IntelligentReturnSystemManagerPassword") = "" Then
-  IntelligentReturnSystemManagerPassword = objShell.Environment("USER").Item("IntelligentReturnSystemManagerPassword")
+' Check whether "/testmode" has been supplied. If so, this forces the mode changes & forwarding process to happen
+If colargs.Exists("testmode") Then
+    testMode = true
 Else
-  WScript.Echo "The password must be set as a user environment variable with name IntelligentReturnSystemManagerPassword"
-  WScript.Quit 1
+    testMode = false
 End If
 
 baseUrl = "http://" & inductionPcName
@@ -43,7 +45,7 @@ objHTTP.open "POST", baseUrl & "/IntelligentReturn/pages/Index.aspx", False
 ' Don't follow redirects
 objHTTP.Option(6) = False
 objHTTP.SetRequestHeader "Content-Type", "application/x-www-form-urlencoded"
-objHTTP.send "password=" & IntelligentReturnSystemManagerPassword
+objHTTP.send "password=" & intelligentReturnSystemManagerPassword
 strCookie = objHTTP.getResponseHeader("Set-Cookie")
 If Left(strCookie, 17) = "ASP.NET_SessionId" Then
   Wscript.Echo Now() & ": " & "Authenticating using session cookie"
@@ -56,34 +58,35 @@ Set objHTTP = nothing
 ' Check number of items BEFORE forwarding
 numItemsToProcess = countItems("Before")
 
-If numItemsToProcess = minNumItemsToProcess Then
+If numItemsToProcess >= 1 Or testMode = true Then
+  ' Set the Operation Mode to OUT OF SERVICE, while the store/forwarding process is done
+    currentMode = changeMode("OUT_OF_SERVICE")
+    If currentMode = "OUT_OF_SERVICE" Then
+  ' Forward items
+      wscript.echo Now() & ": Proceeding with Store/Forward"
+      Set objHTTP = CreateObject("WinHttp.WinHttpRequest.5.1")
+      objHTTP.open "GET", baseUrl & "/IntelligentReturn/pages/StoreAndForwardStart.aspx", False
+      objHTTP.SetRequestHeader "Cookie", strCookie
+      objHTTP.send
+      Set objHTTP = nothing
+  ' Allow time for the items to be processed
+      WScript.Sleep forwardSleepTime
+  ' Check number of items AFTER forwarding
+      numItemsToProcess = countItems("After")
+  ' Set mode back to normal
+      currentMode = changeMode("NORMAL")
+    Else
+      wscript.echo Now() & ": Problem with mode set - exiting"
+      Wscript.quit 1
+    End If
+Else
   wscript.echo Now() & ": Exiting early as 0 items to process"
   WScript.Quit
-Else
-' Set the Operation Mode to OUT OF SERVICE, while the store/forwarding process is done
-  currentMode = changeMode("OUT_OF_SERVICE")
-  If currentMode = "OUT_OF_SERVICE" Then
-' Forward items
-    wscript.echo Now() & ": Proceeding with Store/Forward"
-    Set objHTTP = CreateObject("WinHttp.WinHttpRequest.5.1")
-    objHTTP.open "GET", baseUrl & "/IntelligentReturn/pages/StoreAndForwardStart.aspx", False
-    objHTTP.SetRequestHeader "Cookie", strCookie
-    objHTTP.send
-    Set objHTTP = nothing
-' Allow time for the items to be processed
-    WScript.Sleep forwardSleepTime
-' Check number of items AFTER forwarding
-    numItemsToProcess = countItems("After")
-' Set mode back to normal
-    currentMode = changeMode("NORMAL")
-  Else
-    wscript.echo Now() & ": Problem with mode set - exiting"
-    Wscript.quit 1
-  End If
 End If
 
 Function countItems(when)
 ' Check number of items for processing
+  Dim numItemsToProcessElement,numItemsToProcessInnertext,objHtmlFile
   Set objHTTP = CreateObject("WinHttp.WinHttpRequest.5.1")
   Set objHtmlFile = CreateObject("htmlfile")
   objHTTP.open "GET", baseUrl & "/IntelligentReturn/pages/StoreAndForward.aspx", False
@@ -103,6 +106,8 @@ Function countItems(when)
 End Function
 
 Function changeMode(mode)
+  'Change the mode of operation
+  Dim modeElement,objHtmlFile,selectedValue,redirectLocation
   Set objHTTP = CreateObject("WinHttp.WinHttpRequest.5.1")
   Set objHtmlFile = CreateObject("htmlfile")
   objHTTP.open "POST", baseUrl & "/IntelligentReturn/pages/Support.aspx", False

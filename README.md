@@ -19,10 +19,10 @@
 
  To test the script from the command line:
  ```
- cscript.exe //nologo 3MStoreAndForward.vbs /inductionpcname:inductionpc.domain.ac.uk /testmode:true /forwardsleeptime:5
+ cscript.exe //nologo 3MStoreAndForward.vbs /inductionpcname:inductionpc.domain.ac.uk /testmode /forwardsleeptime:5
  ```
 
- `/testmode:true` runs through the operation mode changes and store-forward procedure irrespective of whether there are any items to process.
+ `/testmode` runs through the operation mode changes and store-forward procedure irrespective of whether there are any items to process.
 
  `/forwardsleeptime:seconds` indicates the number of seconds to wait after forwarding transactions but before setting the Induction PC to `Normal` operation mode. Default is 2 minutes but for testing purposes you'll want to set this to something like 5 seconds. The amount of time required is determined by the number of transactions to process, so if you're running this script regularly and not allowing the numbers to build up, then it could be that 15 seconds is all that's required. In practice, if you're running the scheduled task in the small hours when few-to-no people are using the Library, then a longer wait period is likely perfectly acceptable.
 
