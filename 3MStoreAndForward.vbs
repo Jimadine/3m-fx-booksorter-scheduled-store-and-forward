@@ -17,17 +17,17 @@ Else
 End If
 
 ' Check whether a "/inductionpcname:string" has been supplied. If not, default to localhost
-If colargs.Exists("inductionpcname") And Not(IsEmpty(colArgs.Item("inductionpcname"))) Then
-  inductionPcName = colArgs.Item("inductionpcname")
-Else
+If IsEmpty(colArgs.Item("inductionpcname")) Then
   inductionPcName = "localhost"
+Else
+  inductionPcName = colArgs.Item("inductionpcname")
 End If
 
 ' Check whether "/forwardsleeptime:seconds" has been supplied. If not, default to 2 minutes
-If colargs.Exists("forwardsleeptime") And Not(IsEmpty(colArgs.Item("forwardsleeptime"))) Then
-  forwardSleepTime = colArgs.Item("forwardsleeptime")*1000
-Else
+If IsEmpty(colArgs.Item("forwardsleeptime")) Then
   forwardSleepTime = 120000
+Else
+  forwardSleepTime = colArgs.Item("forwardsleeptime")*1000
 End If
 
 ' Check whether "/testmode" has been supplied. If so, this forces the mode changes & forwarding process to happen
