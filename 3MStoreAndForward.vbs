@@ -9,11 +9,11 @@ Set colNamedArguments = WScript.Arguments.Named
 Set objShell = WScript.CreateObject("WScript.Shell")
 
 ' Check the web admin interface password is set as a user environment variable
-If Not objShell.Environment("USER").Item("IntelligentReturnSystemManagerPassword") = "" Then
-  strIntelligentReturnSystemManagerPassword = objShell.Environment("USER").Item("IntelligentReturnSystemManagerPassword")
-Else
+If objShell.Environment("USER").Item("IntelligentReturnSystemManagerPassword") = "" Then
   WScript.Echo "The password must be set as a user environment variable with name IntelligentReturnSystemManagerPassword"
   WScript.Quit 1
+Else
+  strIntelligentReturnSystemManagerPassword = objShell.Environment("USER").Item("IntelligentReturnSystemManagerPassword")
 End If
 
 ' Check whether a "/inductionpcname:string" has been supplied. If not, default to localhost
