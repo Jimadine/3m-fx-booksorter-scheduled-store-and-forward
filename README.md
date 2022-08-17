@@ -19,7 +19,7 @@
 
  To test the script from the command line:
  ```
- cscript.exe //nologo 3MStoreAndForward.vbs /inductionpcname:inductionpc.domain.ac.uk /testmode /forwardsleeptime:5
+ C:\Windows\System32\cscript.exe //nologo 3MStoreAndForward.vbs /inductionpcname:inductionpc.domain.ac.uk /testmode /forwardsleeptime:5
  ```
 
  `/testmode` runs through the operation mode changes and store-forward procedure irrespective of whether there are any items to process.
@@ -31,9 +31,9 @@ The script provides a fair amount of output as it runs. This is designed to be l
 To create a scheduled task, do so in the normal way:
 
  ```
- Program/script:   cmd.exe
- Add arguments: cscript.exe //nologo 3MStoreAndForward.vbs >>3MStoreAndForward.log 2>&1 & cmd.exe /C echo --->>3MStoreAndForward.log
- Start in:  the folder where the script is
+ Program/script: C:\Windows\System32\cmd.exe
+ Add arguments: /C C:\Windows\System32\cscript.exe //nologo 3MStoreAndForward.vbs >>3MStoreAndForward.log 2>&1 & C:\Windows\System32\cmd.exe /C echo --->>3MStoreAndForward.log
+ Start in: the folder where the script is
  ```
   The `cmd.exe /C echo ---` creates some separation in the log file, helpful in delineating each scheduled task run. A scheduled task `3MStoreAndForward.xml` export file is provided. To simplify creating a scheduled task you can import this file into Task Scheduler.
 
